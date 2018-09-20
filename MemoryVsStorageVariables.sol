@@ -28,14 +28,26 @@ contract Numbers {
         
         // lets do anther intersting test 
         changeArray(numbers);
+        changeArray2(numbers);
         
     }
     
     function changeArray(int[] numbersArray) private {
-        // this modification is not going to affect the main 
+        // by default arguments are assumed memory variables. 
+        // so this modification is not going to affect the main 
         // numbers variable cuz the numbersArray is a copy of 
         // the storage numbers variable.
         numbersArray[1] = 100000;
     }
+    
+    function changeArray2(int[] storage numbersArray) private {
+        // if you want the argumenst to be passed as a 
+        // storage variables and not only a memory copy 
+        // you should declare that in the function delaration 
+        // so now the main numbers variable is going to change
+        numbersArray[1] = 20000;
+    }
+    
+    
     
 }
