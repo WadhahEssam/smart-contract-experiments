@@ -66,8 +66,28 @@ contract Campaign {
     // every time which will cost a lot of gas 
     // so we will use mappping in order to solve this 
     // cuz with mapping you don't have to loop throw elements
-    function approveRequest() public {
+    function approveRequest(uint requestIndex) public {
         
+        // check weather he is one of the campaign approveRequest
+        // and check if he already approved the request or not
+        require(approvers[msg.sender] && !requests[requestIndex].approvals[msg.sender] ); 
+            
+        // if every thing is good add him to the request approvers 
+        // and increase the approvalCount by one.
+        requests[requestIndex].approvals[msg.sender] = true;
+        requests[requestIndex].approvalCount++;
     }
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
