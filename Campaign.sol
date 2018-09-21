@@ -43,8 +43,22 @@ contract Campaign {
          
         // anther way of defining struct instances
         // Request newRequest = Request(description, value, recipient, false); // they should be in order
-        
         requests.push(newRequest);
+    }
+    
+    // approvers can only vote for one time 
+    // you might think that the most obvious way
+    // of implementing the votes, is to put an array
+    // inside the Request stuct that have all the voters 
+    // and a counter of who voted for yes and anther 
+    // variable to store the number of who didn't voted
+    // but this is totally bad way of doing it, because 
+    // you will have loop throw the whole array of approvers 
+    // every time which will cost a lot of gas 
+    // so we will use mappping in order to solve this 
+    // cuz with mapping you don't have to loop throw elements
+    function approveRequest() public {
+        
     }
     
 }
