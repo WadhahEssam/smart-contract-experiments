@@ -1,95 +1,120 @@
 pragma solidity ^0.4.17;
 
-contract Lottery {
+contract Campaign {
+
+    // this struct is creating a defintion only not a variable
+    struct Request {
+        string description;                     // what is this money used for
+        uint value;                             // the value that the manager is willing to send to the vendor
+        address recipient;                      // the address of the vendor
+        bool complete;                          // this will specify if the request has been finalized or not 
+        mapping(address => bool) approvals;     // mapping to get if a certin address approved a request or not
+        uint approvalCount;                     // number of people who approved this request 
+    }
+        
     address public manager;
-    address[] public players;
+    uint public minimumContribution;
+    mapping(address => bool) public approvers;
+    uint public approversCount; 
+    Request[] public requests;
     
-    // how ever creates this lottery contract must be the manager. 
-    constructor() public {
-        manager = msg.sender;
-    }
     
-    // so in order for you as a player to enter the lottery you 
-    // will have to enter some amount of ether
-    function enter() public payable {
-        
-        // this is a global function that is used for validation
-        // .01 ether > this number will be automatically converted
-        // into wei , notice that there is no clear message telling 
-        // you that you are not meeting the minimum requirement
-        require(msg.value >= .01 ether);
-        players.push(msg.sender);
-    }
-    
-    // this function will choose one of players that are participating
-    // and will give this player the money to reward him of his work
-    // issues : there is no random number generator in solidity 
-    // it is nearly impssiable to genereate random numbers in solidity
-    // but we are going to try to make that but it is not 100% random,
-    // notice that we add the restricted modifier to this function
-    function pickWinner() public restricted {
-        
-        // getting the winnir's address
-        address winner = players[random() % players.length]; 
-        
-        // sending money to address 
-        // addresses are special type of variables
-        // and have methods attached to them
-        // .transfer() will transfer the specified
-        // wei to this variable
-        // so we can access the amount of ether that 
-        // exist in this contract by just using
-        // this.balance
-        winner.transfer(this.balance);
-        
-        // resetting the contract this is going 
-        // to empty the array and create new empty one 
-        // the zero is the initial size of the array
-        players = new address[](0);
-    }
-    
-    // helper function for generating a random number out of the 
-    // out of the existing number of players
-    function random() private view returns (uint) {
-        
-        // global sha3 function that hashes data
-        // block is a global variable that contains its difficulty
-        // now is gobal variabl too that is producing the time
-        // the output of the sha3 function is returning a hash ( hexa dicimal )
-        // so we have to convert it into an unsigned integer
-        return uint(sha3(block.difficulty, now, players));
-    }
-    
-    // this methods is just showing amount of wei 
-    // that is available in this contract 
-    function getAvailableWei() public view returns (uint) {
-        return this.balance;
-    }
-    
-    // function modifiers used to reduce the amount of code that you write
-    // if you want to add the modifier you just add the name of the modifier 
-    // before the returns keywork, the goal of using modifiers is to reduce 
-    // the amount of code that we write. 
-    modifier restricted() {
-        
-        // making sure that the manager is the only 
-        // one who can call this function
-        require(manager == msg.sender);
-        
-        // this means that the rest of code will be 
-        // before this undersocre, so you can easily
-        // make it before the code 
+    modifier restrected() {
+        require(msg.sender == manager);
         _;
     }
-    
-    // a function that will return all the players with their numbers
-    function getPlayers() public view returns(address[]) {
-        return players;
+            
+    constructor(uint m) public {
+        manager = msg.sender;
+        minimumContribution = m;
     }
     
-    // a function that will return the number of paticipants
-    function getNumberOfPlayers() public view returns(uint) {
-        return players.length;
+    function contribute() public payable {
+        require(msg.value >= minimumContribution);
+        
+        // adding a new mapping to approvers
+        // close to javascript objects 
+        approvers[msg.sender] = true; 
+        approversCount++; 
     }
     
-} 
+    // called by the manager to create a request for buying something
+    function createRequest(string description, uint value, address recipient) public restrected {
+        
+        // creating instance of the struct 
+        // notice that you don't have to initilize the approvals field
+        // and that is because we only have to initilize the value types
+        // and then we will be able to access the reference types 
+        Request memory newRequest = Request({
+            description: description,
+            value: value,
+            recipient: recipient,
+            complete: false,
+            approvalCount: 0
+        });
+         
+        // anther way of defining struct instances
+        // Request newRequest = Request(description, value, recipient, false); // they should be in order
+        requests.push(newRequest);
+    }
+    
+    // approvers can only vote for one time 
+    // you might think that the most obvious way
+    // of implementing the votes, is to put an array
+    // inside the Request stuct that have all the voters 
+    // and a counter of who voted for yes and anther 
+    // variable to store the number of who didn't voted
+    // but this is totally bad way of doing it, because 
+    // you will have loop throw the whole array of approvers 
+    // every time which will cost a lot of gas 
+    // so we will use mappping in order to solve this 
+    // cuz with mapping you don't have to loop throw elements
+    function approveRequest(uint requestIndex) public {
+        Request storage request = requests[requestIndex];
+        
+        // check weather he is one of the campaign approveRequest
+        // and check if he already approved the request or not
+        require(approvers[msg.sender] && !request.approvals[msg.sender] ); 
+            
+        // if every thing is good add him to the request approvers 
+        // and increase the approvalCount by one.
+        request.approvals[msg.sender] = true;
+        request.approvalCount++;
+    }
+    
+    function finalizeRequest(uint requestIndex) public restrected {
+        Request storage request = requests[requestIndex]; 
+        
+        // make sure that the request is complete
+        require(!request.complete);
+        
+        // make sure that at least 50% of the people have voted yes
+        require(request.approvalCount > (approversCount / 2));
+        
+        // send the money to the vendor's address 
+        request.recipient.transfer(request.value);
+        
+        // mark the request as complete so manager can't 
+        // finalize it more than one time
+        request.complete = true;        
+    }
+    
+    // returns the current balance of the campaign
+    function contributionAmount() public view returns(uint) {
+        return this.balance;     
+    }
+    
+    
+}
+
+
+
+
+
+
+
+
+
+
+
+
