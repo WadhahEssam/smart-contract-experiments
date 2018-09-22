@@ -1,5 +1,24 @@
 pragma solidity ^0.4.17;
 
+contract CampaignFactory {
+    address[] public deployedCampaigns;
+    
+    function createCampaign(uint minimumContribution) public {
+        // the new Campaign statment will creaste a new campaign and will return 
+        // the address of this new campaign contract that was created 
+        // very important thing to understand here, that we are expecting 
+        // the address of the user who created the contract to be the manager
+        // of the campaiign contract but if we didn't specify this 
+        // this contract's address will be the manager of the campagin contracgt
+        deployedCampaigns.push(new Campaign(minimumContribution, msg.sender));
+    }
+    
+    function getDeployedContracts() public view returns(address[]) {
+        return deployedCampaigns; 
+    }
+    
+}
+
 contract Campaign {
 
     // this struct is creating a defintion only not a variable
@@ -24,8 +43,8 @@ contract Campaign {
         _;
     }
             
-    constructor(uint m) public {
-        manager = msg.sender;
+    constructor(uint m, address sender) public {
+        manager = sender;
         minimumContribution = m;
     }
     
@@ -103,8 +122,7 @@ contract Campaign {
     function contributionAmount() public view returns(uint) {
         return this.balance;     
     }
-    
-    
+     
 }
 
 
